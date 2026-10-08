@@ -73,7 +73,7 @@ elif page == 'Auslan sign recognition':
     st.write('Real UCI PowerGlove recordings: 8 channels per timestep, resampled to 30 timesteps. A model predicts a word from the entire movement sequence.')
     models = auslan['models']
     table = pd.DataFrame([{'Model': n, 'Accuracy (%)': m['accuracy']*100, 'Macro F1': m['macro_f1'], 'Parameters': m['parameters'], 'Training (s)': m['training_seconds'], 'Median inference (ms)': m['latency_median_ms']} for n,m in models.items()])
-    st.dataframe(table, hide_index=True, width='stretch')
+    st.dataframe(table.round(3), hide_index=True, width='stretch')
     st.caption('Inference times are batch=1 on the local CPU and exclude camera capture, landmark extraction and speech. Model sizes and architectures are different; this is one baseline run.')
     tabs = st.tabs(['Explore a recording', 'Confusion matrices', 'Learning & evaluation'])
     with tabs[0]:
@@ -120,8 +120,13 @@ elif page == 'Kaggle climate forecast':
     chart = weather.iloc[:days][['date',*columns]].rename(columns=columns)
     plot(px.line(chart, x='date', y=list(columns.values()), title='Temperature forecasts', labels={'value':'Temperature (°C)','date':'Date','variable':'Series'}))
     st.subheader('Published Kaggle results versus our rerun')
-    display = metrics.rename(columns={'index':'Configuration'})
-    st.dataframe(display, hide_index=True, width='stretch')
+    display = metrics.rename(columns={metrics.columns[0]:'Configuration'})
+    display['Configuration'] = display['Configuration'].replace({
+        'lstm_pred_one_ft_loss':'LSTM · temperature only',
+        'tcn_pred_one_ft_loss':'TCN · temperature only',
+        'lstm_pred_two_ft_loss':'LSTM · temperature + humidity',
+        'tcn_pred_two_ft_loss':'TCN · temperature + humidity'})
+    st.dataframe(display.round(4), hide_index=True, width='stretch')
     st.write('RMSE is the typical scale of prediction error: lower is better. MSE is in squared degrees. R² describes variance explained and is not classification accuracy. Our local best LSTM and TCN differ by only about 0.006 °C; one seeded run cannot establish a reliable winner.')
     with st.expander('How closely did we reproduce the notebook?'):
         st.write('We executed the original 74 code cells: four initial validation models, then four fresh final models trained for 47 epochs. Original architectures, splits and forecasting operations were preserved. Runtime fixes addressed callback-list syntax and indentation; saved artifacts use NumPy weights plus model JSON. Seed 42 was added for the local rerun. Different software versions and randomness mean outputs need not match published values exactly.')
